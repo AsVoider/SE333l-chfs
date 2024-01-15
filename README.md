@@ -14,7 +14,7 @@
 
 # Raft
 
-[Document](./docs/lab3/lab3.md)
+[Document](./docs/lab3/raft.md)
 
 # Lab 4: 
 
