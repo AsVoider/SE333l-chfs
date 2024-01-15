@@ -19,6 +19,7 @@ InodeManager::InodeManager(std::shared_ptr<BlockManager> bm,
   // 1. calculate the number of bitmap blocks for the inodes
   auto inode_bits_per_block = bm->block_size() * KBitsPerByte;
   auto blocks_needed = max_inode_supported / inode_bits_per_block;
+  std::cout << "max inode sup: " << max_inode_supported << std::endl;
 
   // we align the bitmap to simplify bitmap calculations
   if (blocks_needed * inode_bits_per_block < max_inode_supported) {
@@ -76,13 +77,17 @@ auto InodeManager::allocate_inode(InodeType type, block_id_t bid)
   }
 
   inode_id_t count = 0;
+  // std::cout << "ntable: " << n_table_blocks << '\n';
+  auto iter = iter_res.unwrap();
 
   // Find an available inode ID.
-  for (auto iter = iter_res.unwrap(); iter.has_next();
+  for (; iter.has_next();
        iter.next(bm->block_size()).unwrap(), count++) {
+    // std::cout << "here" << std::endl;
     auto data = iter.unsafe_get_value_ptr<u8>();
     auto bitmap = Bitmap(data, bm->block_size());
     auto free_idx = bitmap.find_first_free();
+    // std::cout << free_idx.value() << '\n';
 
     if (free_idx) {
       // If there is an available inode ID.
@@ -115,6 +120,7 @@ auto InodeManager::allocate_inode(InodeType type, block_id_t bid)
       return RAW_2_LOGIC(count * bm->block_size() * sizeof(block_id_t) + free_idx.value());
     }
   }
+  std::cout << "haha" << std::endl;
 
   return ChfsResult<inode_id_t>(ErrorType::OUT_OF_RESOURCE);
 }
@@ -130,10 +136,10 @@ auto InodeManager::set_table(inode_id_t idx, block_id_t bid) -> ChfsNullResult {
   block_id_t table_index = 1 + idx / (bm->block_size() / sizeof(block_id_t));
   inode_id_t entry_index = idx % (bm->block_size() / sizeof(block_id_t));
 
-  std::cout << idx << "||||||||||" << bm->block_size() / sizeof(block_id_t) << std::endl;
-  std::cout << "blksz: " << bm->block_size() << "  " << "sizeof it : " << sizeof(block_id_t) << std::endl;
+  // std::cout << idx << "||||||||||" << bm->block_size() / sizeof(block_id_t) << std::endl;
+  // std::cout << "blksz: " << bm->block_size() << "  " << "sizeof it : " << sizeof(block_id_t) << std::endl;
 
-  std::cout << table_index << "----------" << entry_index << std::endl;
+  // std::cout << table_index << "----------" << entry_index << std::endl;
 
   std::vector<block_id_t> vec(bm->block_size());
   bm->read_block(table_index, (u8 *) vec.data());
@@ -263,14 +269,14 @@ auto InodeManager::free_inode(inode_id_t id) -> ChfsNullResult {
   std::vector<block_id_t> vec(bm->block_size());
   bm->read_block(table_index, (u8 *) vec.data());
   vec[entry_index] = 0;
+  bm->write_block(table_index, (u8 *)vec.data());
+
   block_id_t inode_bitmap_index = 1 + n_table_blocks + idx / (bm->block_size() * 8U);
   block_id_t bitmap_index = idx % (bm->block_size() * 8U);
   std::vector<u8> buffer(bm->block_size());
   bm->read_block(inode_bitmap_index, buffer.data());
   Bitmap bitmap = Bitmap(buffer.data(), bm->block_size());
   bitmap.clear(bitmap_index);
-
-  bm->write_block(table_index, (u8 *)vec.data());
   bm->write_block(inode_bitmap_index, buffer.data());
 
   return KNullOk;

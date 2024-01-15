@@ -62,7 +62,7 @@ void parse_directory(std::string &src, std::list<DirectoryEntry> &list) {
   // TODO: Implement this function.
   // UNIMPLEMENTED();
 
-  std::cout << src << std::endl;
+  // std::cout << "src in func parse_dir" << src << std::endl;
 
   size_t pos = 0;
   while(pos != std::string::npos) {
@@ -105,7 +105,7 @@ auto rm_from_directory(std::string src, std::string filename) -> std::string {
   std::list<DirectoryEntry> dir_list;
   parse_directory(src, dir_list);
   for (auto i = dir_list.begin(); i != dir_list.end(); i++) {
-    std::cout << "filename: " << filename << " " << "i.name: " << i->name << std::endl;
+    // std::cout << "filename: " << filename << " " << "i.name: " << i->name << std::endl;
     if (i->name == filename) {
       dir_list.erase(i);
       break;
@@ -155,7 +155,6 @@ auto FileOperation::lookup(inode_id_t id, const char *name)
 
   // TODO: Implement this function.
   // UNIMPLEMENTED();
-  std::cout << "name: " << name << std::endl;
   read_directory(this, id, list);
   for (auto i : list) {
     //std::cout << i.name << std::endl;
@@ -163,7 +162,6 @@ auto FileOperation::lookup(inode_id_t id, const char *name)
       return ChfsResult<inode_id_t>(i.id);
     }
   }
-
 
   return ChfsResult<inode_id_t>(ErrorType::NotExist);
 }
@@ -182,11 +180,18 @@ auto FileOperation::mk_helper(inode_id_t id, const char *name, InodeType type)
   read_directory(this, id, list);
   for (auto i : list) {
     if(i.name == name) {
+      std::cout << "already exist" << std::endl;
       return ChfsResult<inode_id_t>(ErrorType::AlreadyExist);
     }
   }
-
-  inode_id_t inode_id = alloc_inode(type).unwrap();
+  auto inode_id_res = alloc_inode(type);
+  if (inode_id_res.is_err()) 
+  {
+    std::cout << "inode wrong" << std::endl;
+    return ChfsResult<inode_id_t>(ErrorType::NotExist);
+  }
+  auto inode_id = inode_id_res.unwrap();
+  // std::cout << "inode id : " << inode_id << std::endl;
 
   std::string str(dir_list_to_string(list));
   str = append_to_directory(str, name, inode_id);
@@ -194,9 +199,8 @@ auto FileOperation::mk_helper(inode_id_t id, const char *name, InodeType type)
   // std::cout << "str:" << str << std::endl;
   std::vector<u8> vec(str.begin(), str.end());
   write_file(id, vec);
-  
 
-  return ChfsResult<inode_id_t>(static_cast<inode_id_t>(inode_id));
+  return ChfsResult<inode_id_t>(inode_id);
 }
 
 // {Your code here}
@@ -235,7 +239,6 @@ auto FileOperation::unlink(inode_id_t parent, const char *name)
   write_file(parent, vec);
 
   //inode_p->inner_attr.size = 
-  
   
   return KNullOk;
 }

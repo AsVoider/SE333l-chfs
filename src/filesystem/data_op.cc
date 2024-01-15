@@ -9,11 +9,14 @@ auto FileOperation::alloc_inode(InodeType type) -> ChfsResult<inode_id_t> {
   inode_id_t inode_id = static_cast<inode_id_t>(0);
   auto inode_res = ChfsResult<inode_id_t>(inode_id);
 
-  block_id_t allocated_blockid = block_allocator_->allocate().unwrap();
-  std::cout << "allo blockid: " << allocated_blockid << std::endl;
+  auto allocated_blockid_res = block_allocator_->allocate();
+  if (allocated_blockid_res.is_err()) {
+    std::cout << "block wrong" << std::endl;
+    return ChfsResult<inode_id_t>(ErrorType::INVALID);
+  }
+  auto allocated_blockid = allocated_blockid_res.unwrap();
 
   inode_res = inode_manager_->allocate_inode(type, allocated_blockid);
-  std::cout << "inode re : " << inode_res.unwrap() << std::endl;
 
   // TODO:
   // 1. Allocate a block for the inode.

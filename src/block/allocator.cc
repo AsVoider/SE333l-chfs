@@ -38,6 +38,7 @@ BlockAllocator::BlockAllocator(std::shared_ptr<BlockManager> block_manager,
   // zeroing
   for (block_id_t i = 0; i < this->bitmap_block_cnt; i++) {
     this->bm->zero_block(i + this->bitmap_block_id);
+    // std::cout << "zreo: " << i << std::endl;
   }
 
   block_id_t cur_block_id = this->bitmap_block_id;
@@ -146,7 +147,7 @@ auto BlockAllocator::allocate() -> ChfsResult<block_id_t> {
 
 // Your implementation
 auto BlockAllocator::deallocate(block_id_t block_id) -> ChfsNullResult {
-  if (block_id >= this->bm->total_blocks() || block_id < 0) {
+  if (block_id >= this->bm->total_blocks() || block_id < this->bitmap_block_id + bitmap_block_cnt) {
     return ChfsNullResult(ErrorType::INVALID_ARG);
   }
 
