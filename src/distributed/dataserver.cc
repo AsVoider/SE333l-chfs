@@ -105,6 +105,7 @@ auto DataServer::alloc_block() -> std::pair<block_id_t, version_t> {
 auto DataServer::free_block(block_id_t block_id) -> bool {
   // UNIMPLEMENTED();
   if (block_allocator_->deallocate(block_id).is_ok()) {
+    // this->block_allocator_->bm->zero_block(block_id);
     this->update_blk_version(block_id);
     return true;
   }

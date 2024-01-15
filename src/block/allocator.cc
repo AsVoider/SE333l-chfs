@@ -165,6 +165,7 @@ auto BlockAllocator::deallocate(block_id_t block_id) -> ChfsNullResult {
   bitmap.clear(bitmap_index);
   // 2. Flush the changed bitmap block back to the block manager.
   bm->write_block(bitmap_block_index, buffer.data());
+  bm->zero_block(block_id);
 
   // 3. Return ChfsNullResult(ErrorType::INVALID_ARG) 
   //    if you find `block_id` is invalid (e.g. already freed).
